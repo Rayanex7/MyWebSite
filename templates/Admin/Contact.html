@@ -1,0 +1,43 @@
+{% extends "Home/index.html" %}  <!-- Replace with the actual filename of your parent template -->
+
+{% block title %}Contact Us{% endblock %}
+
+{% block content %}
+<div class="main-content" style="margin: 0 auto; max-width: 800px; padding-left: 20px;">
+    <h1 class="page-title">Contact Us</h1>
+    <div class="card">
+        <div class="card-body">
+            <h2>Get in Touch</h2>
+            <p>If you have any questions, suggestions, or need to report an issue, please fill out the form below. We'll get back to you as soon as possible.</p>
+            <form method="POST" action="/home/Contact" class="shadow-lg p-4 rounded bg-white">
+                <!-- Name -->
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                
+                <!-- Email -->
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                
+                <!-- Subject -->
+                <div class="mb-3">
+                    <label for="subject" class="form-label">Subject</label>
+                    <input type="text" class="form-control" id="subject" name="subject" required>
+                </div>
+
+                <!-- Message -->
+                <div class="mb-3">
+                    <label for="message" class="form-label">Message</label>
+                    <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary w-100 btn-custom" name="action" value="Send">Send Message</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

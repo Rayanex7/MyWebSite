@@ -1,0 +1,85 @@
+{% extends "Home/index.html" %}  <!-- Replace with the actual filename of your parent template -->
+
+{% block title %}Modify Student{% endblock %}
+
+{% block content %}
+<div class="main-content" style="margin-left: 20px;"> <!-- Adjust the margin value as needed -->
+    <h1 class="page-title">Modify Student</h1>
+    <p class="text-center">Please complete the form below to update the student's details.</p>
+    <form method="POST" action="/Student_management/ModSTD" class="shadow-lg p-4 rounded bg-white">
+        <!-- Massar ID -->
+        <div class="mb-3">
+            <label for="massar_id" class="form-label">Massar ID</label>
+            <input type="text" class="form-control" id="massar_id" name="massar_id" required>
+        </div>
+
+        <!-- First Name -->
+        <div class="mb-3">
+            <label for="first_name" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="first_name" name="first_name" required>
+        </div>
+
+        <!-- Last Name -->
+        <div class="mb-3">
+            <label for="last_name" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="last_name" name="last_name" required>
+        </div>
+
+        <!-- Birthdate -->
+        <div class="mb-3">
+            <label for="birthdate" class="form-label">Birthdate</label>
+            <input type="text" class="form-control" id="birthdate" name="birthdate" placeholder="YYYY/MM/DD" pattern="\d{4}/\d{2}/\d{2}" required>
+            <small class="form-text text-muted">Enter the date in YYYY/MM/DD format.</small>
+        </div>
+
+        <!-- Gender -->
+        <div class="mb-3">
+            <label for="gender" class="form-label">Gender</label>
+            <select class="form-select" id="gender" name="gender" required>
+                <option value="" disabled selected>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+
+        <!-- Country -->
+        <div class="mb-3">
+            <label for="country" class="form-label">Country</label>
+            <input type="text" class="form-control" id="country" name="country" required>
+        </div>
+
+        <!-- City -->
+        <div class="mb-3">
+            <label for="city" class="form-label">City</label>
+            <input type="text" class="form-control" id="city" name="city" required>
+        </div>
+
+        <!-- Address -->
+        <div class="mb-3">
+            <label for="address" class="form-label">Address</label>
+            <input type="text" class="form-control" id="address" name="address" required>
+        </div>
+
+        <!-- Parent Phone -->
+        <div class="mb-3">
+            <label for="parent_phone" class="form-label">Parent's Phone</label>
+            <input type="tel" class="form-control" id="parent_phone" name="parent_phone" required>
+        </div>
+
+        <!-- Class ID -->
+        <div class="mb-3">
+            <label for="class_id" class="form-label">Class ID</label>
+            <input type="text" class="form-control" id="class_id" name="class_id" required>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary w-100 btn-custom" name="action" value="Modify">Submit</button>
+    </form>
+</div>
+{% endblock %}

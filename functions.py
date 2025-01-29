@@ -1,6 +1,9 @@
 from flask import flash, request, redirect, url_for, session, render_template
 import mysql.connector
 from datetime import datetime
+import uuid
+
+ADMIN = {"ryn":"123"}
 
 unix_to_formatted = lambda x: datetime.fromtimestamp(x).strftime('%Y/%m/%d')
 formatted_to_unix = lambda x: int(datetime.strptime(x, '%Y/%m/%d').timestamp())
@@ -13,6 +16,21 @@ CON = mysql.connector.connect (
     )
 
 cursor = CON.cursor()
+
+def authentication(username, password):
+    if username in ADMIN and ADMIN[username] == password:
+        key = uuid.uuid4()
+        session["username"] = username
+        session["key"] = key
+        return True
+    return False
+
+def is_auth():
+    username = session.get('username')
+    key = session.get('key')
+    if username and key:
+        return True
+    return False
 
 def Del_STD():
     if not CON.is_connected():

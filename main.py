@@ -1,41 +1,14 @@
-from flask import Flask, render_template, url_for, session, request, redirect, flash
-import uuid
+from flask import Flask, render_template, session, request, redirect, flash
 import mysql.connector
 from datetime import datetime
-from functions import Del_STD, Add_STD, Check_STD, ModSTD, List_STD, Search_STD
-import ast
-
-ADMIN = {"ryn":"123"}
-
-CON = mysql.connector.connect (
-        host = "127.0.0.1",
-        user = "root",
-        password = "Meliox7@2013.",
-        database = "School"
-    )
+from functions import Del_STD, Add_STD, Check_STD, ModSTD, List_STD, Search_STD, authentication, is_auth
 
 unix_to_formatted = lambda x: datetime.fromtimestamp(x).strftime('%Y/%m/%d')
 formatted_to_unix = lambda x: int(datetime.strptime(x, '%Y/%m/%d').timestamp())
 
-cursor = CON.cursor()
-
 app = Flask(__name__)
 app.secret_key = "102030"
-
-def authentication(username, password):
-    if username in ADMIN and ADMIN[username] == password:
-        key = uuid.uuid4()
-        session["username"] = username
-        session["key"] = key
-        return True
-    return False
-
-def is_auth():
-    username = session.get('username')
-    key = session.get('key')
-    if username and key:
-        return True
-    return False
+notifications = []
 
 @app.route('/')
 def main():
@@ -53,13 +26,17 @@ def login():
                 return redirect('/home')
             return redirect('/login')
         else:
-            return render_template('login.html')
+            return render_template('Home/login.html')
     return redirect('/home')
 
 @app.route('/home')
-def home():  
+def home():
     if is_auth():
-        return render_template('index.html')
+        try:
+            session.pop('contact_data')
+            
+        except KeyError:
+            return render_template('Home/index.html', notifications=notifications)
     return redirect('/')
 
 @app.route('/Student_management', methods=['GET', 'POST'])
@@ -88,7 +65,7 @@ def Student_management():
                 session['std'] = std
                 return redirect('/Student_management/SearchSTD')
             
-    return render_template("Students.html")
+    return render_template("Students/Students.html")
 
 @app.route('/Student_management/ModSTD', methods=['GET', 'POST'])
 def Modify():
@@ -99,7 +76,7 @@ def Modify():
             flash("Student Modified Successfully", "success")
             return redirect('/Student_management')
     else:
-        return render_template('Mod.html') 
+        return render_template('Students/Mod.html') 
 
 @app.route('/Student_management/ListSTD', methods=['GET', 'POST'])
 def List():
@@ -125,7 +102,7 @@ def List():
             data = (Massar, Fname, Lname, Birthdate, Gender, Email, Country, City, Address, Phone, Class_id)
             new_students.append(data)
 
-        return render_template('list.html', new_students=new_students)
+        return render_template('Students/list.html', new_students=new_students)
     else:
         flash("There Is No Students In This Class", "danger")
         return redirect('/Student_management')
@@ -152,7 +129,7 @@ def Search():
                 i[10]
             )
         std = data
-        return render_template('Search.html', std=std)
+        return render_template('Students/Search.html', std=std)
     else:
         flash("There Is No Student With This Massar Code", "danger")
         return redirect('/Student_management')
@@ -175,12 +152,46 @@ def Logout():
      session.pop('key')
      return redirect('/')
 
-'''@app.route('/hello')
-def hello():
-    if is_auth():
-        return f"Hello {session['username']}!"
-    return redirect('/')'''
-    
+@app.route('/home/About')
+def About():
+    if not is_auth():
+        return redirect('/login')
+    return render_template('Admin/About.html')
+
+@app.route('/home/Contact', methods=['GET', 'POST'])
+def Contact():
+    if not is_auth():
+        return redirect('/login')
+    if request.method == 'POST':
+        name = request.form['name']
+        Email = request.form['email']
+        Subject = request.form['subject']
+        Message = request.form['message']
+        data = {"Name":name, "Email":Email, "Subject":Subject, "Message":Message}
+        session['contact_data'] = data
+        notifications.append(data)
+        if all([name, Email, Subject, Message]):
+            flash("We Will Get You Soon ☺️", 'success')
+            return redirect('/home')
+        else:
+            flash("Please Fill The requested form", 'danger')
+            return redirect('/Contact')        
+    return render_template('Admin/Contact.html')
+
+@app.route('/home/response_center', methods=['POST'])
+def response_center():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        subject = request.form['subject']
+        message = request.form['message']
+        if all([name,email,subject,message]):
+            for i in notifications:
+                if i['Name'] == name and i['Subject'] == subject and i['Message'] == message:
+                    notifications.remove(i)
+            return render_template('Admin/Response.html', name=name, email=email, subject=subject, message=message)
+        flash("Error Sending info To server !", "danger")
+        return redirect('/home')
 
 if __name__ == "__main__":
     app.run(debug=True)

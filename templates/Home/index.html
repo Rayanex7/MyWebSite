@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Home Page{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --header-height: 60px;
+            --primary-color: #1a73e8;
+            --sidebar-bg: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #64748b;
+        }
+
+        body {
+            background-color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            z-index: 1000;
+        }
+
+        /* Menu Toggle Button */
+        .menu-toggle {
+            background: transparent;
+            border: none;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            color: var(--primary-color);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: -100%;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            transition: all 0.3s ease-in-out;
+            z-index: 999;
+            overflow-y: auto;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar.show {
+            left: 0;
+        }
+
+        .sidebar-link {
+            color: var(--text-dark);
+            text-decoration: none;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-link:hover {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .sidebar-link.active {
+            background-color: #e8f0fe;
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+
+        .sidebar-link i {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: var(--header-height);
+            padding: 2rem;
+            transition: all 0.3s ease-in-out;
+            flex: 1;
+        }
+
+        .page-title {
+            color: var(--text-dark);
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            background: white;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-custom {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-transform: none;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Footer */
+        .footer {
+            background-color: white;
+            color: var(--text-light);
+            text-align: center;
+            padding: 1rem 0;
+            margin-top: auto;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* Overlay */
+        .sidebar-overlay {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.3);
+            z-index: 998;
+            display: none;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        /* Logo Area */
+        .logo-area {
+            margin-left: 1rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Responsive Design */
+        @media (min-width: 992px) {
+            .sidebar {
+                left: 0;
+            }
+            .main-content {
+                margin-left: var(--sidebar-width);
+            }
+            .sidebar-overlay {
+                display: none !important;
+            }
+            .menu-toggle {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <button class="menu-toggle" id="menu-toggle">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="logo-area">
+            Abderrahman Ibn Ghazala
+        </div>
+        <div class="notification-area ms-auto">
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary position-relative dropdown-toggle" id="notification-button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-bell"></i>
+                    <!-- Notification Badge -->
+                    {% if notifications %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ notifications|length }}
+                    </span>
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="notification-button">
+                    {% if notifications %}
+                        {% for notification in notifications %}
+                        <li>
+                            <form method="POST" action="/home/response_center">
+                                <input type="hidden" name="name" value="{{ notification.Name }}">
+                                <input type="hidden" name="email" value="{{ notification.Email }}">
+                                <input type="hidden" name="subject" value="{{ notification.Subject }}">
+                                <input type="hidden" name="message" value="{{ notification.Message }}">
+                                <button type="submit" class="dropdown-item">
+                                    <strong>Subject:</strong> {{ notification.Subject }}
+                                </button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li>
+                            <a class="dropdown-item">No new notifications</a>
+                        </li>
+                    {% endif %}
+                </ul>                
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <a href="/" class="sidebar-link"><i class="bi bi-house"></i> Home</a>
+        <a href="/Student_management" class="sidebar-link"><i class="bi bi-mortarboard"></i> Students Management</a>
+        <a href="/Teachers_management" class="sidebar-link"><i class="bi bi-person-workspace"></i> Teachers Management</a>
+        <a href="/Direction" class="sidebar-link"><i class="bi bi-building"></i> Direction</a>
+        <a href="/home/About" class="sidebar-link"><i class="bi bi-info-circle"></i> About Us</a>
+        <a href="/home/Contact" class="sidebar-link"><i class="bi bi-envelope"></i> Contact Us</a>
+        <a href="/Logout" class="sidebar-link"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+        {% block content %}
+        <h1 class="page-title">Admin Dashboard</h1>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <form action="/Student_management">
+                            <button type="submit" class="btn btn-primary btn-custom w-100">
+                                <i class="bi bi-mortarboard me-2"></i>Student Management
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <form action="/Direction">
+                            <button type="submit" class="btn btn-info btn-custom w-100">
+                                <i class="bi bi-building me-2"></i>Direction
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <form action="/Teachers_management">
+                            <button type="submit" class="btn btn-success btn-custom w-100">
+                                <i class="bi bi-person-workspace me-2"></i>Teachers Management
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} mt-3 alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="mb-0">&copy; {% block copyright %}2025{% endblock %} Abderrahman Ibn Ghazala. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.0/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('show');
+                sidebarOverlay.classList.toggle('show');
+            }
+
+            menuToggle.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sidebar.classList.contains('show')) {
+                    toggleSidebar();
+                }
+            });
+
+            // Highlight current page in sidebar
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
