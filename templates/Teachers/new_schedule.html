@@ -1,0 +1,189 @@
+{% extends "Home/index.html" %}
+
+{% block title %}Create Teacher Schedule{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4 text-dark">Create Teacher Schedule</h1>
+
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+
+            {% if error_message %}
+                <div class="alert alert-danger error-message">{{ error_message }}</div>
+            {% endif %}
+            {% if success_message %}
+                <div class="alert alert-success success-message">{{ success_message }}</div>
+            {% endif %}
+
+            <form id="scheduleForm" method="POST" action="/Teacher/Teachers_management/Create_Schedule">
+                <div class="mb-3">
+                    <label for="teacher_id" class="form-label">Teacher ID</label>
+                    <input type="text" class="form-control" id="teacher_id" name="teacher_id" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Schedule</label>
+                    <div id="schedule">
+                        {% set classes = {
+                            1: 'Tronc Commun 1',
+                            2: 'Tronc Commun 2',
+                            3: 'Tronc Commun 3',
+                            4: '1ere BACCALAUREATE 1',
+                            5: '1ere BACCALAUREATE 2',
+                            6: '2eme BACCALAUREATE 1',
+                            7: '2eme BACCALAUREATE 2',
+                            8: '1ere BTS RSI',
+                            9: '1ere BTS DAI',
+                            10: '2eme BTS RSI',
+                            11: '2eme BTS DAI'
+                        } %}
+                        {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+                        <div class="day-schedule mb-4">
+                            <h5>{{ day }}</h5>
+                            <div class="row">
+                                {% for time_slot in ['8-9', '9-10', '10-11', '11-12', '2-3', '3-4', '4-5', '5-6'] %}
+                                <div class="col-md-3 mb-3">
+                                    <div class="card p-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input schedule-checkbox" 
+                                                   type="checkbox" 
+                                                   id="checkbox_{{ day }}_{{ time_slot }}" 
+                                                   data-day="{{ day }}" 
+                                                   data-time="{{ time_slot }}">
+                                            <label class="form-check-label" for="checkbox_{{ day }}_{{ time_slot }}">
+                                                {{ time_slot }}
+                                            </label>
+                                        </div>
+                                        <div class="class-selection mt-2" style="display: none;">
+                                            <select class="form-select schedule-select" 
+                                                    name="schedule[{{ day }}][{{ time_slot }}]" 
+                                                    disabled>
+                                                <option value="">Select a Class</option>
+                                                {% for class_id, class_name in classes.items() %}
+                                                <option value="{{ class_id }}">{{ class_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle me-2"></i>Submit Schedule
+                </button>
+                <a href="/Teacher/Teachers_management" class="btn btn-custom">
+                    <i class="bi bi-check-circle me-2"></i>Return
+                </a>                
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle all schedule checkboxes
+    const checkboxes = document.querySelectorAll('.schedule-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const card = this.closest('.card');
+            const selectDiv = card.querySelector('.class-selection');
+            const select = selectDiv.querySelector('select');
+            
+            if (this.checked) {
+                selectDiv.style.display = 'block';
+                select.disabled = false;
+            } else {
+                selectDiv.style.display = 'none';
+                select.disabled = true;
+                select.value = ''; // Reset selection
+            }
+        });
+    });
+
+    // Handle form submission
+    document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Create the schedule object
+        const schedule = {};
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const teacherId = document.getElementById('teacher_id').value;
+
+        // Validate teacher ID
+        if (!teacherId) {
+            alert('Please enter a Teacher ID');
+            return;
+        }
+        
+        // Build schedule object
+        days.forEach(day => {
+            schedule[day] = {};
+            const dayCheckboxes = document.querySelectorAll(`input[data-day="${day}"]`);
+            
+            dayCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const timeSlot = checkbox.getAttribute('data-time');
+                    const select = checkbox.closest('.card').querySelector('select');
+                    if (select.value) {
+                        schedule[day][timeSlot] = parseInt(select.value);
+                    }
+                }
+            });
+        });
+
+        // Validate if any time slots are selected
+        if (Object.keys(schedule).every(day => Object.keys(schedule[day]).length === 0)) {
+            alert('Please select at least one time slot');
+            return;
+        }
+
+        // Create the FormData object
+        const formData = new FormData();
+        formData.append('teacher_id', teacherId);
+        formData.append('schedule', JSON.stringify(schedule));
+
+        // Disable form submission button to prevent double submission
+        const submitButton = this.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+
+        // Send the data to the server
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Create a temporary div to parse the response
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            // Check for error message
+            const errorElement = tempDiv.querySelector('.error-message');
+            if (errorElement) {
+                alert(errorElement.textContent.trim());
+                return;
+            }
+            
+            // If no error, assume success
+            alert('Schedule created successfully!');
+            window.location.href = '/Teacher/Teachers_management';
+        })
+        .catch(error => {
+            console.error('Error details:', error);
+            alert('An error occurred while saving the schedule. Please try again.');
+        })
+        .finally(() => {
+            // Re-enable the submit button
+            submitButton.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %}

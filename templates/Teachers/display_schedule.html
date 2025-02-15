@@ -1,0 +1,109 @@
+{% extends "Home/index.html" %}
+
+{% block title %}Student Schedule{% endblock %}
+
+{% block content %}
+    <h1 class="text-center mb-4 text-dark">Weekly Schedule of {{ info[0][0] }} {{ info[0][1] }}</h1>
+
+    <!-- Bootstrap Grid System -->
+    <div class="container">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm shadow-lg rounded">
+                <thead class="thead-light">
+                    <tr>
+                        <th scope="col" class="align-middle text-white bg-secondary rounded-left">Day</th>
+                        {% for time_slot in time_slots %}
+                            <th scope="col" class="text-center align-middle text-white bg-secondary">{{ time_slot }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day, times in schedule.items() %}
+                        <tr class="{% if day == 'Saturday' or day == 'Sunday' %}text-muted{% endif %}">
+                            <td class="font-weight-bold text-center bg-secondary text-white rounded">{{ day }}</td>
+                            {% for time_slot in time_slots %}
+                                <td class="text-center {% if times.get(time_slot, '-') != '-' %}bg-light-grey{% else %}bg-white{% endif %} p-3 rounded"
+                                    style="height: 80px; font-size: 16px; transition: background-color 0.3s ease;">
+                                    {{ times.get(time_slot, '-') }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+<style>
+    /* Custom grey background for subject cells */
+    .bg-light-grey {
+        background-color: #f0f0f0 !important;
+        border-radius: 12px; /* Rounded corners for cells */
+    }
+
+    /* Hover effect for subject cells */
+    .table-hover tbody tr:hover td {
+        background-color: #f7f7f7 !important;
+    }
+
+    /* Custom border colors for the table */
+    .table-bordered td, .table-bordered th {
+        border: 2px solid #dee2e6 !important;
+        border-radius: 12px; /* Rounded corners for borders */
+    }
+
+    /* Padding inside cells */
+    .table td, .table th {
+        padding: 1.2rem;
+    }
+
+    /* Additional styling for headers */
+    .thead-light th {
+        background-color: #6c757d !important; /* Neutral color */
+        font-size: 18px;
+        text-align: center;
+        border-radius: 12px; /* Rounded corners for headers */
+    }
+
+    /* Responsive design for mobile */
+    @media (max-width: 768px) {
+        .table-sm {
+            font-size: 14px;
+        }
+        .table td, .table th {
+            padding: 1rem;
+        }
+    }
+
+    /* Styling for weekend days */
+    .text-muted {
+        color: #6c757d !important;
+    }
+
+    /* Shadow effect for the table */
+    .shadow-lg {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Custom background color for weekend days */
+    .bg-secondary {
+        background-color: #6c757d !important; /* Neutral color for primary background */
+        border-radius: 12px;
+    }
+
+    /* Styling for the 'Day' column */
+    .font-weight-bold {
+        font-weight: 700;
+    }
+
+    /* Custom font for the header */
+    h1 {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Custom transition for background color change */
+    .table td, .table th {
+        transition: background-color 0.3s ease;
+    }
+</style>

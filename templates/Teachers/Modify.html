@@ -1,0 +1,252 @@
+{% extends "Home/index.html" %}
+
+{% block title %}Add Teacher{% endblock %}
+
+{% block content %}
+<!-- Modify Teacher Form -->
+<div id="addForm" class="collapse show">
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title mb-4"><i class="bi bi-person-plus me-2"></i>Modify Teacher</h3>
+            <form method="POST">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="teacher_id" class="form-label">Teacher ID</label>
+                        <input type="text" class="form-control" id="teacher_id" name="teacher_id" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="first_name" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="last_name" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="phone" name="phone" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="gender" class="form-label">Gender</label>
+                        <select class="form-select" id="gender" name="gender" required>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="class_id" class="form-label">Add Classes</label>
+                        <select class="form-select" id="class_id">
+                            <optgroup label="Tronc Commun">
+                                <option value="1">Tronc Commun 1</option>
+                                <option value="2">Tronc Commun 2</option>
+                                <option value="3">Tronc Commun 3</option>
+                            </optgroup>
+                            <optgroup label="1st Baccalaureate">
+                                <option value="4">1st Baccalaureate 1</option>
+                                <option value="5">1st Baccalaureate 2</option>
+                            </optgroup>
+                            <optgroup label="2nd Baccalaureate">
+                                <option value="6">2nd Baccalaureate 1</option>
+                                <option value="7">2nd Baccalaureate 2</option>
+                            </optgroup>
+                            <optgroup label="1st Year BTS">
+                                <option value="8">1st Year BTS SRI</option>
+                                <option value="9">1st Year BTS DSI</option>
+                            </optgroup>
+                            <optgroup label="2nd Year BTS">
+                                <option value="10">2nd Year BTS SRI</option>
+                                <option value="11">2nd Year BTS DSI</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <!-- Selected Classes Will Show Here -->
+                    <div class="mt-3">
+                        <label class="form-label">Selected Classes:</label>
+                        <div id="selected-classes" class="d-flex flex-wrap gap-2"></div>
+                        <input type="hidden" name="selected_classes" id="selected_classes_input">
+                    </div>
+                    <!-- Modified Subject Selection -->
+                    <div class="col-md-6 mt-3">
+                        <label for="subject_id" class="form-label">Add Subject</label>
+                        <select class="form-select" id="subject_id">
+                            <option value="">Please choose a class first</option>
+                        </select>
+                    </div>
+                    <!-- Selected Subjects Will Show Here -->
+                    <div class="col-12 mt-3">
+                        <label class="form-label">Selected Subject:</label>
+                        <div id="selected-subjects" class="d-flex flex-wrap gap-2"></div>
+                        <input type="hidden" name="selected_subjects" id="selected_subjects_input">
+                    </div>
+                </div>
+                <div class="col-12 mt-4">
+                    <button type="submit" class="btn btn-primary" name="action" value="add">
+                        <i class="bi bi-person-plus me-2"></i>Add Teacher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ category }} mt-3 alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+{% endwith %}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const classSelect = document.getElementById("class_id");
+        const subjectSelect = document.getElementById("subject_id");
+        const selectedClassesContainer = document.getElementById("selected-classes");
+        const selectedSubjectsContainer = document.getElementById("selected-subjects");
+        const selectedClassesInput = document.getElementById("selected_classes_input");
+        const selectedSubjectsInput = document.getElementById("selected_subjects_input");
+        const teacherForm = document.getElementById("teacherForm");
+        
+        let selectedClasses = new Map();
+        let selectedSubjects = new Map();
+    
+        // Class Selection Handler
+        classSelect.addEventListener("change", function() {
+            const selectedValue = classSelect.value;
+            const selectedText = classSelect.options[classSelect.selectedIndex].text;
+    
+            if (!selectedClasses.has(selectedValue) && selectedValue !== "") {
+                addSelectedClass(selectedValue, selectedText);
+                updateSubjects(Array.from(selectedClasses.keys()));
+                updateHiddenInputs();
+            }
+            classSelect.value = "";
+        });
+    
+        // Subject Selection Handler
+        subjectSelect.addEventListener("change", function() {
+            const selectedValue = subjectSelect.value;
+            const selectedText = subjectSelect.options[subjectSelect.selectedIndex].text;
+    
+            if (!selectedSubjects.has(selectedValue) && selectedValue !== "") {
+                addSelectedSubject(selectedValue, selectedText);
+                updateHiddenInputs();
+            }
+            subjectSelect.value = "";
+        });
+    
+        function addSelectedClass(value, text) {
+            const badge = createBadge(text, "bg-primary");
+            selectedClasses.set(value, { text: text, element: badge });
+            selectedClassesContainer.appendChild(badge);
+    
+            badge.querySelector("button").addEventListener("click", function() {
+                selectedClasses.delete(value);
+                badge.remove();
+                updateSubjects(Array.from(selectedClasses.keys()));
+                updateHiddenInputs();
+            });
+        }
+    
+        function addSelectedSubject(value, text) {
+            const badge = createBadge(text, "bg-success");
+            selectedSubjects.set(value, { text: text, element: badge });
+            selectedSubjectsContainer.appendChild(badge);
+    
+            badge.querySelector("button").addEventListener("click", function() {
+                selectedSubjects.delete(value);
+                badge.remove();
+                updateHiddenInputs();
+            });
+        }
+    
+        function createBadge(text, bgClass) {
+            const badge = document.createElement("span");
+            badge.classList.add("badge", bgClass, "me-2", "mb-2", "p-2");
+            badge.innerHTML = `${text} <button type="button" class="btn-close btn-close-white ms-2" aria-label="Close"></button>`;
+            return badge;
+        }
+    
+        function updateHiddenInputs() {
+            selectedClassesInput.value = JSON.stringify(Array.from(selectedClasses.keys()));
+            selectedSubjectsInput.value = JSON.stringify(Array.from(selectedSubjects.keys()));
+        }
+    
+        function updateSubjects(classIds) {
+            subjectSelect.innerHTML = '<option value="">Select a subject</option>';
+            
+            const allSubjects = new Set();
+            classIds.forEach(classId => {
+                const subjects = getSubjectsForClass(classId);
+                subjects.forEach(subject => allSubjects.add(subject));
+            });
+    
+            Array.from(allSubjects).sort().forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject;
+                option.textContent = subject;
+                subjectSelect.appendChild(option);
+            });
+        }
+    
+        function getSubjectsForClass(classId) {
+            const btsSections = ['8', '9', '10', '11'];
+            if (btsSections.includes(classId)) {
+                return [
+                    "Développement Informatique", 
+                    "Communication Professionnelle",
+                    "Architecture et technologie des applications informatiques",
+                    "Environnement économique et juridique de l'entreprise",
+                    "Réseau informatique",
+                    "Système d'exploitation GNU/Linux",
+                    "Système d'exploitation propriétaire",
+                    "Langue Anglaise",
+                    "Langue Arabe",
+                    "Langue Française",
+                    "Mathématique"
+                ];
+            }
+            return [
+                "الإجتماعيات",
+                "التربية الإسلامية",
+                "التربية البدنية",
+                "Informatique",
+                "Langue Anglaise",
+                "Langue Arabe",
+                "Langue Française",
+                "Mathématique",
+                "الفلسفة",
+                "Physique-Chimie",
+                "Science de vie et terre (SVT)"
+            ];
+        }
+    
+        // Form submission handler
+        teacherForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            
+            // Validate selections
+            if (selectedClasses.size === 0) {
+                alert("Please select at least one class");
+                return;
+            }
+            if (selectedSubjects.size === 0) {
+                alert("Please select at least one subject");
+                return;
+            }
+    
+            // Form is valid, submit it
+            this.submit();
+        });
+    });
+</script>
+
+{% endblock %}

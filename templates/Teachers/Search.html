@@ -1,0 +1,37 @@
+{% extends "Home/index.html" %}
+
+{% block title %}Teacher Details{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Teacher Details</h1>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">{{ teacher.first_name }} {{ teacher.last_name }}</h5>
+            <p><strong>ID:</strong> {{ teacher.id }}</p>
+            <p><strong>Gender:</strong> {{ teacher.gender }}</p>
+            <p><strong>Email:</strong> <a href="mailto:{{ teacher.email }}">{{ teacher.email }}</a></p>
+            <p><strong>Phone:</strong> <a href="tel:{{ teacher.phone }}">{{ teacher.phone }}</a></p>
+            <p><strong>Classes:</strong>
+                <ul class="list-unstyled mb-0">
+                    {% for class in teacher.classes %}
+                    <li class="badge bg-light text-dark border me-1 mb-1" style="font-size: 1.1em;">{{ class }}</li>
+                    {% endfor %}
+                </ul>
+            </p>
+            <p><strong>Subjects:</strong>
+                <ul class="list-unstyled mb-0">
+                    {% for subject in teacher.subjects %}
+                    <li class="badge bg-light text-dark border me-1 mb-1" style="font-size: 1.1em;">{{ subject }}</li>
+                    {% endfor %}
+                </ul>
+            </p>
+        </div>
+    </div>
+
+    <form action="/Teacher/Teachers_management" method="GET">
+        <button type="submit" class="btn btn-primary">Back to Teacher Management</button>
+    </form>
+</div>
+{% endblock %}
