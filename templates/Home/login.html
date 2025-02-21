@@ -3,35 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login - Abderrahman Ibn Ghazala</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="bg-light d-flex justify-content-center align-items-center" style="height: 100vh;">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-4">
-                <div class="card shadow-lg">
-                    <div class="card-header bg-primary text-white text-center">
-                        <h3>Login</h3>
-                    </div>
-                    <div class="card-body">
-                        <form action="/Authentication/login" method="POST">
-                            <div class="mb-3">
-                                <label for="U" class="form-label">Username</label>
-                                <input type="text" id="U" name="U" class="form-control" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="P" class="form-label">Password</label>
-                                <input type="password" id="P" name="P" class="form-control" required>
-                            </div>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Submit</button>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="card-footer text-center">
-                        <small>Don't have an account? <a href="/register">Register here</a></small>
+<body class="bg-light">
+    <!-- Header -->
+    <header class="bg-white text-dark py-3 text-center">
+        <div class="container">
+            <div class="d-flex justify-content-center align-items-center">
+                <img src="{{ url_for('static', filename='AbderrahmanIbnGhazala.png') }}" alt="School Logo" class="me-3" style="height: 60px;">
+                <h1 class="mb-0">Abderrahman Ibn Ghazala</h1>
+            </div>
+        </div>
+    </header>
+    
+
+    <!-- Login Section -->
+    <div class="d-flex justify-content-center align-items-center" style="height: 85vh;">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="card shadow-lg">
+                        <div class="card-header bg-secondary text-white text-center">
+                            <h3>Login</h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- Tabs -->
+                            <ul class="nav nav-pills nav-justified mb-3">
+                                <li class="nav-item">
+                                    <a class="nav-link active" id="admin-tab" href="#" onclick="showForm('admin')">Admin</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="teacher-tab" href="#" onclick="showForm('teacher')">Teacher</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="student-tab" href="#" onclick="showForm('student')">Student</a>
+                                </li>
+                            </ul>
+
+                            <!-- Admin Login Form -->
+                            <form id="admin-form" action="/Authentication/login" method="POST">
+                                <div class="mb-3">
+                                    <label for="adminU" class="form-label">Username</label>
+                                    <input type="text" id="adminU" name="U" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="adminP" class="form-label">Password</label>
+                                    <input type="password" id="adminP" name="P" class="form-control" required>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-dark">Login</button>
+                                </div>
+                            </form>
+
+                            <!-- Teacher Login Form -->
+                            <form id="teacher-form" action="/Authentication/login" method="POST">
+                                <div class="mb-3">
+                                    <label for="teacherID" class="form-label">Teacher ID</label>
+                                    <input type="text" id="teacherID" name="T" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="teacherP" class="form-label">Password</label>
+                                    <input type="password" id="teacherP" name="P" class="form-control" required>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-secondary">Login</button>
+                                </div>
+                            </form>
+
+                            <!-- Student Login Form -->
+                            <form id="student-form" action="/Authentication/login" method="POST" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="studentID" class="form-label">Student ID</label>
+                                    <input type="text" id="studentID" name="stdId" class="form-control" required>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-outline-dark">Login</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="card-footer text-center">
+                            <small>Need help? <a href="/Contact">Contact Admin</a></small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -41,5 +95,25 @@
     <!-- Bootstrap JS and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.0/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+    <!-- Script to toggle forms -->
+    <script>
+        // Set the default form to display when the page is loaded
+        window.onload = function() {
+            showForm('admin');
+        };
+    
+        function showForm(role) {
+            document.getElementById("admin-form").style.display = (role === "admin") ? "block" : "none";
+            document.getElementById("teacher-form").style.display = (role === "teacher") ? "block" : "none";
+            document.getElementById("student-form").style.display = (role === "student") ? "block" : "none";
+    
+            // Update active tab
+            document.getElementById("admin-tab").classList.remove("active");
+            document.getElementById("teacher-tab").classList.remove("active");
+            document.getElementById("student-tab").classList.remove("active");
+            document.getElementById(role + "-tab").classList.add("active");
+        }
+    </script>    
 </body>
 </html>

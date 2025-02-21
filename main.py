@@ -18,12 +18,12 @@ app.register_blueprint(Dire_Blueaprint, url_prefix='/Administration')
 @app.route('/')
 @app.route('/home')
 def home():
-    if is_auth():
+    if is_auth() == "Admin":
         try:
             session.pop('contact_data')
         except KeyError:
             return render_template('Home/index.html', notifications=notifications)
-    return redirect('/Authentication/login')
+    return redirect('/Info/Contact')
 
 if __name__ == "__main__":
     app.run(debug=True)

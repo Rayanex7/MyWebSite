@@ -26,7 +26,7 @@ def Contact():
         notifications.append(data)
         if all([name, Email, Subject, Message]):
             flash("We Will Get You Soon ☺️", 'success')
-            return redirect('/home')
+            return redirect('/Info/Contact')
         else:
             flash("Please Fill The requested form", 'danger')
             return redirect('/Info/Contact')        
@@ -34,7 +34,7 @@ def Contact():
 
 @INFO_Blueprint.route('/response_center', methods=['POST'])
 def response_center():
-    if not is_auth():
+    if is_auth() != "Admin":
         return redirect('/Authentication/login')
     if request.method == 'POST':
         name = request.form['name']

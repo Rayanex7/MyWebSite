@@ -11,6 +11,10 @@ formatted_to_unix = lambda x: int(datetime.strptime(x, '%Y/%m/%d').timestamp())
 def Student_management():
     if not is_auth():
         return redirect('/Authentication/login')
+    
+    if is_auth() not in ["Admin", "Teacher"]:
+        return redirect("/Info/Contact")
+    
     if request.method == 'POST':
         action = request.form.get('action')
         if action == "add":
@@ -39,6 +43,10 @@ def Student_management():
 def Modify():
     if not is_auth():
         return redirect('/Authentication/login')
+    
+    if is_auth() not in ["Admin", "Teacher"]:
+        return redirect("/Info/Contact")
+
     if request.method == 'POST':
         if ModSTD():
             flash("Student Modified Successfully", "success")
@@ -50,6 +58,10 @@ def Modify():
 def List():
     if not is_auth():
         return redirect('/Authentication/login')
+    
+    if is_auth() not in ["Admin", "Teacher"]:
+        return redirect("/Info/Contact")
+    
     students = session.get('students')
     
     new_students = []
@@ -79,6 +91,10 @@ def List():
 def Search():
     if not is_auth():
         return redirect('/Authentication/login')
+    
+    if is_auth() not in ["Admin", "Teacher"]:
+        return redirect("/Info/Contact")
+    
     std = session.get('std')
 
     if std:

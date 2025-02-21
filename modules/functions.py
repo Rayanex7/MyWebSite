@@ -6,6 +6,7 @@ import json
 import base64 ; import zlib
 
 ADMIN = {"ryn":"123"}
+Teachers = {"ysf":"123","morad":"123"}
 
 unix_to_formatted = lambda x: datetime.fromtimestamp(x).strftime('%Y/%m/%d')
 formatted_to_unix = lambda x: int(datetime.strptime(x, '%Y/%m/%d').timestamp())
@@ -20,19 +21,48 @@ CON = mysql.connector.connect (
 cursor = CON.cursor()
 
 #Authentication
-def authentication(username, password):
-    if username in ADMIN and ADMIN[username] == password:
-        key = uuid.uuid4()
-        session["username"] = username
-        session["key"] = key
-        return True
+def authentication(who, username, password=None):
+    if who == "ADMIN":
+        if username in ADMIN and ADMIN[username] == password:
+            key = uuid.uuid4()
+            session["admin"] = username
+            session["admin_key"] = key
+            return True
+        
+    if who == "TEACHER":
+        if username in Teachers and Teachers[username] == password:
+            key = uuid.uuid4()
+            session["teacher"] = username
+            session["teacher_key"] = key
+            return True
+    
+    if who == "STUDENT":
+        try:
+            cursor.execute("""SELECT Massar_ID FROM Students WHERE Massar_ID = %s""", (username,))
+            stdId = cursor.fetchall()
+            print(f"The ID = {stdId}")
+            if stdId:
+                session["std"] = stdId
+                return True
+        except Exception as e:
+            pass
     return False
 
-def is_auth():
-    username = session.get('username')
-    key = session.get('key')
-    if username and key:
-        return True
+def is_auth():  
+    admin = session.get('admin')
+    Akey = session.get('admin_key')
+    if admin and Akey:
+        return "Admin"
+    
+    teacher = session.get('teacher')
+    Tkey = session.get('teacher_key')
+    if teacher and Tkey:
+        return "Teacher"
+    
+    std = session.get('std')
+    if std:
+        return "Student"
+    
     return False
 
 #Encoding
@@ -173,6 +203,33 @@ def Search_STD():
             return False
 
 #Teachers
+def teacher_Management():
+    if not is_auth():
+        return redirect('/Authentication/login')
+    if is_auth() != "Admin":
+        return redirect('/Info/Contact')
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'add':
+            AddTeacher()
+        elif action == 'del':
+            DelTeacher()
+        elif action == 'mod':
+            if CheckTeacher():
+                return redirect('/Teacher/Teachers_management/Modify')
+        elif action == 'list':
+            return redirect('/Teacher/Teachers_management/List')
+        elif action == 'search':
+            id = request.form.get('teacher_id')
+            session['teacher_id'] = id
+            return redirect('/Teacher/Teachers_management/Search')
+        elif action == 'viewSchedule':
+            id = request.form.get('teacher_id')
+            session['teacher_id'] = id
+            return redirect(url_for('Teacher.Schedule'))
+        return redirect('/Teacher/Teachers_management')
+    return render_template('Teachers/teach_home.html')
+
 def AddTeacher():
     subj_id = []
     subjects_dict = {
