@@ -4,12 +4,13 @@ from datetime import datetime
 import uuid
 import json
 import base64 ; import zlib
+from datetime import datetime
 
-ADMIN = {"ryn":"123"}
-Teachers = {"ysf":"123","morad":"123"}
 
 unix_to_formatted = lambda x: datetime.fromtimestamp(x).strftime('%Y/%m/%d')
 formatted_to_unix = lambda x: int(datetime.strptime(x, '%Y/%m/%d').timestamp())
+
+notifications = []
 
 CON = mysql.connector.connect (
         host = "127.0.0.1",
@@ -20,40 +21,87 @@ CON = mysql.connector.connect (
 
 cursor = CON.cursor()
 
+#Logs
+def Logs(WHO, ID, Fname, Lname, IP, Action):
+    date = datetime.now()
+    if WHO == "Admin":
+        try:
+            cursor.execute("""INSERT INTO Logs (User_Type, User_Name, User_Id, IP, Action)
+                        VALUES (%s,%s,%s,%s,%s)""", (WHO, f"{Fname} {Lname}", ID, IP, Action))
+            CON.commit()
+        except Exception as e:
+            print(e)
+
+    if WHO == "Teacher":
+        try:
+            cursor.execute("""INSERT INTO Logs (User_Type, User_Name, User_Id, IP, Action)
+                        VALUES (%s,%s,%s,%s,%s)""", (WHO, f"{Fname} {Lname}", ID, IP, Action))
+            CON.commit()
+        except Exception as e:
+            print(e)
+        
+    if WHO == "Student":
+        try:
+            cursor.execute("""INSERT INTO Logs (User_Type, User_Name, User_Id, IP, Action)
+                        VALUES (%s,%s,%s,%s,%s)""", (WHO, f"{Fname} {Lname}", ID, IP, Action))
+            CON.commit()
+        except Exception as e:
+            print(e)
+
 #Authentication
 def authentication(who, username, password=None):
     if who == "ADMIN":
-        cursor.execute("""SELECT ID, passwd FROM AdminsAUTH WHERE ID = %s AND passwd = %s""", (username, password))
-        Admin = cursor.fetchall()
+        try:
+            cursor.execute("""SELECT ID, password FROM AdminsAUTH WHERE ID = %s AND password = %s""", (username, password))
+            Admin = cursor.fetchall()
+        except Exception as e:
+            print(e)
         if Admin:
             key = uuid.uuid4()
             session["admin"] = username
             session["admin_key"] = key
             session["admin_ip"] = request.remote_addr
             session["admin_logs"] = {}
+
+            cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (username,))
+            result = cursor.fetchone()
+            fname, lname = result
+            Logs("Admin", session['admin'], fname, lname, session['admin_ip'], "LOGGED IN")
+
             return True
             
     if who == "TEACHER":
-        cursor.execute("""SELECT ID, passwd FROM TeachersAUTH WHERE ID = %s AND passwd = %s""", (username, password))
-        Teacher = cursor.fetchall()
+        try:
+            cursor.execute("""SELECT ID, passwd FROM TeachersAUTH WHERE ID = %s AND passwd = %s""", (username, password))
+            Teacher = cursor.fetchall()
+        except Exception as e:
+            print(e)
         if Teacher:
             key = uuid.uuid4()
             session["teacher"] = username
             session["teacher_key"] = key
             session["teacher_ip"] = request.remote_addr
-            session["admin_logs"] = {}
+            try:
+                cursor.execute("""SELECT First_name, Last_name FROM Teachers WHERE ID = %s""", (username,))
+                result = cursor.fetchone()
+                Fname, Lname = result
+                Logs("Teacher", session['teacher'], Fname, Lname, session['teacher_ip'], "LOGGED IN")
+            except Exception as e:
+                print(e)
             return True
     
     if who == "STUDENT":
         try:
-            cursor.execute("""SELECT Massar_ID FROM Students WHERE Massar_ID = %s""", (username,))
-            stdId = cursor.fetchall()
-            print(f"The ID = {stdId}")
-            if stdId:
-                session["std"] = stdId
+            cursor.execute("""SELECT Massar_ID, First_name, Last_name, Class_ID FROM Students WHERE Massar_ID = %s""", (username,))
+            result = cursor.fetchone()
+            ID, Fname, Lname, ClassId = result 
+            if all([ID, Fname, Lname, ClassId]):
+                session["std"] = ID
+                session["std_ip"] = request.remote_addr
+                Logs("Student", ID, Fname, Lname, session["std_ip"], Action="LOGGED IN")
                 return True
         except Exception as e:
-            pass
+            print(e)
     return False
 
 def is_auth():
@@ -77,6 +125,39 @@ def is_auth():
     
     return False
 
+def WhoIsConnected():
+    user = None
+    if 'admin' in session:
+        user = 'admin'
+    elif 'teacher' in session:
+        user = 'teacher'
+    elif 'std' in session:
+        user = 'std'
+    else:
+        return redirect('/Authentication/login')
+    return user
+
+def LogOut():
+    who = WhoIsConnected()
+    if who == 'admin':
+        cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+        result = cursor.fetchone()
+        fname, lname = result
+        Logs("Admin", session['admin'], fname, lname, session["admin_ip"], "LOGGED OUT")
+    if who == 'teacher':
+        cursor.execute("""SELECT First_name, Last_name FROM Teachers WHERE ID = %s""", (session['teacher'],))
+        result = cursor.fetchone()
+        fname, lname = result
+        Logs("Teacher", session['teacher'], fname, lname, session["teacher_ip"], "LOGGED OUT")
+    if who == 'std':
+        cursor.execute("""SELECT First_name, Last_name FROM Students WHERE Massar_ID = %s""", (session['std'],))
+        result = cursor.fetchone()
+        fname, lname = result
+        Logs("Student", session['std'], fname, lname, session["std_ip"], "LOGGED OUT")
+
+    session.clear()
+    return redirect('/Authentication/login')
+
 #Encoding
 def encode(data):
     return base64.b64encode(zlib.compress(json.dumps(data).encode())).decode()
@@ -96,8 +177,18 @@ def Del_STD():
         user = cursor.fetchall()
         if user:
             cursor.execute("""DELETE FROM Students WHERE Massar_ID = %s""", (Massar_code,))
-            CON.commit()
             flash("Student Deleted Successfully", "Success")
+            CON.commit()
+            if is_auth() == "Admin":
+                cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+                result = cursor.fetchone()
+                fname, lname = result
+                Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"DELETED {Massar_code}")
+            elif is_auth() == "Teacher":
+                cursor.execute("""SELECT ID, First_name, Last_name FROM Teachers WHERE ID = %s""", (session['teacher'],))
+                result = cursor.fetchone()
+                id, fname, lname = result
+                Logs("Teacher", id, fname, lname, session['teacher_ip'], f"DELETE {Massar_code}")
         else:
             raise Exception("NO STUDENT WITH THIS MASSAR ID")
     except Exception as e:
@@ -128,8 +219,18 @@ def Add_STD():
         try:   
             cursor.execute('''INSERT INTO Students (Massar_ID, First_name, Last_name, Birthdate, Gender, Email , Country, City, Address, Parent_Phone, Class_ID)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (Massar, Fname, Lname, Birth, Gender, Email, Country, City, Address, Phone, Class_id))
-            
             CON.commit()
+
+            if is_auth() == "Admin":
+                cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+                result = cursor.fetchone()
+                fname, lname = result
+                Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"ADDED {Massar}")
+            elif is_auth() == "Teacher":
+                cursor.execute("""SELECT ID, First_name, Last_name FROM Teachers WHERE ID = %s""", (session['teacher'],))
+                result = cursor.fetchone()
+                id, fname, lname = result
+                Logs("Teacher", id, fname, lname, session['teacher_ip'], f"ADDED {Massar}")
 
             flash("Student Added Succesfuly","Success")
         except Exception as e:
@@ -182,6 +283,16 @@ def ModSTD():
             WHERE Massar_ID = %s
         """, (Fname, Lname, Birthday, Gender, Email, Country, City, Address, Phone, Class_id, Massar_code))
         CON.commit()
+        if is_auth() == "Admin":
+            cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+            result = cursor.fetchone()
+            fname, lname = result
+            Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"MODIFIED STUDENT {Massar_code}")
+        elif is_auth() == "Teacher":
+            cursor.execute("""SELECT ID, First_name, Last_name FROM Teachers WHERE ID = %s""", (session['teacher'],))
+            result = cursor.fetchone()
+            id, fname, lname = result
+            Logs("Teacher", id, fname, lname, session['teacher_ip'], f"MODIFIED STUDENT {Massar_code}")
         return True
     
 def List_STD():
@@ -194,7 +305,18 @@ def List_STD():
         try:
             cursor.execute("""SELECT * FROM Students WHERE Class_ID = %s""", (level,))
             students = cursor.fetchall()
-            return True, students
+            if is_auth() == "Admin":
+                cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+                result = cursor.fetchone()
+                fname, lname = result
+                Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"LISTED STUDENTS IN CLASS {level}")
+            elif is_auth() == "Teacher":
+                cursor.execute("""SELECT ID, First_name, Last_name FROM Teachers WHERE ID = %s""", (session['teacher'],))
+                result = cursor.fetchone()
+                id, fname, lname = result
+                Logs("Teacher", id, fname, lname, session['teacher_ip'], f"LISTED STUDENTS IN CLASS {level}")
+            session['students'] = students
+            return True
         except Exception as e:
             flash(f"Error Listing: [{e}]", "Error")
             return False
@@ -209,7 +331,18 @@ def Search_STD():
         try:
             cursor.execute("""SELECT * FROM Students WHERE Massar_ID = %s""", (Massar,))
             std = cursor.fetchall()
-            return True, std
+            if is_auth() == "Admin":
+                cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+                result = cursor.fetchone()
+                fname, lname = result
+                Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"SEARCHED FOR STUDENT {Massar}")
+            elif is_auth() == "Teacher":
+                cursor.execute("""SELECT ID, First_name, Last_name FROM Teachers WHERE ID = %s""", (session['teacher'],))
+                result = cursor.fetchone()
+                id, fname, lname = result
+                Logs("Teacher", id, fname, lname, session['teacher_ip'], f"SEARCHED FOR STUDENT {Massar}")
+            session['searched_stds'] = std
+            return True
         except Exception as e:
             flash(f"Error Listing: [{e}]", "Error")
             return False
@@ -299,6 +432,10 @@ def AddTeacher():
                     VALUES (%s,%s)""", (teacher_id, subject_id))
         
     CON.commit()
+    cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+    result = cursor.fetchone()
+    fname, lname = result
+    Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"ADDED [TEACHER: {teacher_id}] [CLASSES: {classes}] [SUBJECTS: {subjects}]")
     flash("Teacher Added Successfully", "success")
 
 def DelTeacher():
@@ -308,6 +445,10 @@ def DelTeacher():
     cursor.execute("""DELETE FROM TeachersClasses WHERE Teacher_ID = %s""", (id,))
     cursor.execute("""DELETE FROM Teachers WHERE ID = %s""", (id,))
     CON.commit()
+    cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+    result = cursor.fetchone()
+    fname, lname = result
+    Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"DELETED [TEACHER: {id}]")
     flash("Teacher Deleted Successfully", "success")
 
 def ModTeacher():
@@ -370,6 +511,10 @@ def ModTeacher():
                             VALUES (%s,%s)""", (teacher_id, i))
                 
         CON.commit()
+        cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+        result = cursor.fetchone()
+        fname, lname = result
+        Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"MODIFIED [TEACHER: {teacher_id}] [CLASSES: {classes}] [SUBJECTS: {subjects}]")
         flash("Teacher Modified Successfully", "success")
         return redirect('/Teacher/Teachers_management')
     return render_template('Teachers/Modify.html')
@@ -440,13 +585,13 @@ def ListTeachers():
             "subjects": []
         }
 
-    # Convert **Class IDs** to real names
+    # Convert Classes id to their real name
     for teacher_id, class_id in classes_data:
         if teacher_id in teachers:
             class_name = classes_dict.get(class_id, f"Unknown ({class_id})")
             teachers[teacher_id]["classes"].append(class_name)
 
-    # Convert **Subject IDs** to real names
+    # Convert Subjects id to theire real names
     for teacher_id, subject_id in subjects_data:
         if teacher_id in teachers:
             subject_name = subjects_dict.get(subject_id, f"Unknown ({subject_id})")
@@ -454,6 +599,11 @@ def ListTeachers():
 
     # Convert dictionary values to a list
     teachers_list = list(teachers.values())
+
+    cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+    result = cursor.fetchone()
+    fname, lname = result
+    Logs("Admin", session['admin'], fname, lname, session['admin_ip'], "LISTED TEACHERS")
 
     # Pass `teachers_list` to the template
     return render_template("Teachers/ListTeachers.html", teachers=teachers_list)
@@ -527,6 +677,12 @@ def SearchTeacher():
         subject_name = subjects_dict.get(subject_id[0], f"Unknown ({subject_id[0]})")
         teacher["subjects"].append(subject_name)
 
+    # save Logs
+    cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+    result = cursor.fetchone()
+    fname, lname = result
+    Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"SEARCHED FOR [TEACHER: {id}]")
+
     # Pass teacher data to the template
     return render_template('Teachers/Search.html', teacher=teacher)
 
@@ -564,6 +720,13 @@ def ShowSchedule():
                         schedule[j][k] = classes[i]
 
         time_slots = ["8-9", "9-10", "10-11", "11-12", "12-1", "1-2", "2-3", "3-4", "4-5", "5-6"]
+
+        #Svae The Logs
+        cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+        result = cursor.fetchone()
+        fname, lname = result
+        Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"SEEN SCHEDULE OF [TEACHER: {id}]")
+
         return render_template('Teachers/display_schedule.html', schedule=schedule, time_slots=time_slots, info=info)
     except Exception as e:
         print(e)
@@ -610,6 +773,13 @@ def CreateSchedule():
             cursor.execute("""INSERT INTO Schedules (id, schedules) 
                             VALUES (%s, %s)""", (teacher, schedule))
             CON.commit()
+
+            # Save Logs
+            cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+            result = cursor.fetchone()
+            fname, lname = result
+            Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"CREATED SCHEDULE FOR [TEACHER: {teacher}]")
+
             print("Schedule created successfully")  # Debug print
             return render_template('Teachers/new_schedule.html', 
                                 success_message='Schedule created successfully', 
@@ -625,5 +795,81 @@ def CreateSchedule():
     
     return render_template('Teachers/new_schedule.html', classes=classes)
 
-def logs():
-    pass
+#Infos
+def AboutUs():
+    if not is_auth():
+        return redirect('/Authentication/login')
+    who = WhoIsConnected()
+    if who == 'admin':
+        cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+        result = cursor.fetchone()
+        fname, lname = result
+        Logs("Admin", session['admin'], fname, lname, session["admin_ip"], "SEEN [ABOUT US]")
+    if who == 'teacher':
+        cursor.execute("""SELECT First_name, Last_name FROM Teachers WHERE ID = %s""", (session['teacher'],))
+        result = cursor.fetchone()
+        fname, lname = result
+        Logs("Teacher", session['teacher'], fname, lname, session["teacher_ip"], "SEEN [ABOUT US]")
+    if who == 'std':
+        cursor.execute("""SELECT First_name, Last_name FROM Students WHERE Massar_ID = %s""", (session['std'],))
+        result = cursor.fetchone()
+        fname, lname = result
+        Logs("Student", session['std'], fname, lname, session["std_ip"], "SEEN [ABOUT US]")
+    return render_template('Admin/About.html')
+
+def ContactUS():
+    if not is_auth():
+        return redirect('/Authentication/login')
+    if request.method == 'POST':
+        name = request.form['name']
+        Email = request.form['email']
+        Subject = request.form['subject']
+        Message = request.form['message']
+        data = {"Name":name, "Email":Email, "Subject":Subject, "Message":Message}
+        session['contact_data'] = data
+        notifications.append(data)
+        if all([name, Email, Subject, Message]):
+            flash("We Will Get You Soon ☺️", 'success')
+            who = WhoIsConnected()
+            if who == 'admin':
+                cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+                result = cursor.fetchone()
+                fname, lname = result
+                Logs("Admin", session['admin'], fname, lname, session["admin_ip"], "FILLED [CONTACT US]")
+            if who == 'teacher':
+                cursor.execute("""SELECT First_name, Last_name FROM Teachers WHERE ID = %s""", (session['teacher'],))
+                result = cursor.fetchone()
+                fname, lname = result
+                Logs("Teacher", session['teacher'], fname, lname, session["teacher_ip"], "FILLED [CONTACT US]")
+            if who == 'std':
+                cursor.execute("""SELECT First_name, Last_name FROM Students WHERE Massar_ID = %s""", (session['std'],))
+                result = cursor.fetchone()
+                fname, lname = result
+                Logs("Student", session['std'], fname, lname, session["std_ip"], "FILLED [CONTACT US]")
+            return redirect('/Info/Contact')
+        else:
+            flash("Please Fill The requested form", 'danger')
+            return redirect('/Info/Contact')        
+    return render_template('Admin/Contact.html')
+
+def Response():
+    if is_auth() != "Admin":
+        return redirect('/Authentication/login')
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        subject = request.form['subject']
+        message = request.form['message']
+        if all([name,email,subject,message]):
+            for i in notifications:
+                if i['Name'] == name and i['Subject'] == subject and i['Message'] == message:
+                    notifications.remove(i)
+            cursor.execute("""SELECT Fname, Lname FROM Admins WHERE ID = %s""", (session['admin'],))
+            result = cursor.fetchone()
+            fname, lname = result
+            Logs("Admin", session['admin'], fname, lname, session['admin_ip'], f"SEEN NOTIFICATION FROM [NAME: {name}, EMAIL: {email}]]")
+            return render_template('Admin/Response.html', name=name, email=email, subject=subject, message=message)
+        flash("Error Sending info To server !", "danger")
+        return redirect('/home')
+
+

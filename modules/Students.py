@@ -28,13 +28,9 @@ def Student_management():
                 flash("No Student With This Massar Code", "danger")
         elif action == "list":
             if List_STD():
-                _, students = List_STD()
-                session['students'] = students
                 return redirect('/Student/ListSTD')
         elif action == "search":
             if Search_STD():
-                _, std = Search_STD()
-                session['std'] = std
                 return redirect('/Student/SearchSTD')
             
     return render_template("Students/Students.html")
@@ -95,7 +91,7 @@ def Search():
     if is_auth() not in ["Admin", "Teacher"]:
         return redirect("/Info/Contact")
     
-    std = session.get('std')
+    std = session.get('searched_stds')
 
     if std:
         for i in std:

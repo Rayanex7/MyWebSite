@@ -1,10 +1,11 @@
 from flask import Flask, render_template, session, redirect
-from modules.functions import is_auth
+from modules.functions import is_auth, notifications
 from modules.Authentication import AUTH_Blueprint 
 from modules.Students import STD_Blueprint
-from modules.Info import notifications, INFO_Blueprint
+from modules.Info import INFO_Blueprint
 from modules.Teachers import TEA_Blueprint
 from modules.Administartion import Dire_Blueaprint
+
 
 app = Flask(__name__)
 app.secret_key = "102030"

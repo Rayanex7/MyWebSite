@@ -1,5 +1,5 @@
 from flask import render_template, session, request, redirect, Blueprint
-from modules.functions import authentication, is_auth
+from modules.functions import authentication, is_auth, LogOut
 
 
 AUTH_Blueprint = Blueprint('Authentication', __name__)
@@ -39,5 +39,4 @@ def login():
 
 @AUTH_Blueprint.route('/Logout')
 def Logout():
-    session.clear()
-    return redirect('/Authentication/login')
+    return LogOut()
