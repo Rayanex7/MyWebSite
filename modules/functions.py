@@ -23,17 +23,25 @@ cursor = CON.cursor()
 #Authentication
 def authentication(who, username, password=None):
     if who == "ADMIN":
-        if username in ADMIN and ADMIN[username] == password:
+        cursor.execute("""SELECT ID, passwd FROM AdminsAUTH WHERE ID = %s AND passwd = %s""", (username, password))
+        Admin = cursor.fetchall()
+        if Admin:
             key = uuid.uuid4()
             session["admin"] = username
             session["admin_key"] = key
+            session["admin_ip"] = request.remote_addr
+            session["admin_logs"] = {}
             return True
-        
+            
     if who == "TEACHER":
-        if username in Teachers and Teachers[username] == password:
+        cursor.execute("""SELECT ID, passwd FROM TeachersAUTH WHERE ID = %s AND passwd = %s""", (username, password))
+        Teacher = cursor.fetchall()
+        if Teacher:
             key = uuid.uuid4()
             session["teacher"] = username
             session["teacher_key"] = key
+            session["teacher_ip"] = request.remote_addr
+            session["admin_logs"] = {}
             return True
     
     if who == "STUDENT":
@@ -48,19 +56,23 @@ def authentication(who, username, password=None):
             pass
     return False
 
-def is_auth():  
+def is_auth():
+    
     admin = session.get('admin')
     Akey = session.get('admin_key')
     if admin and Akey:
+        session['who'] = "Admin"
         return "Admin"
     
     teacher = session.get('teacher')
     Tkey = session.get('teacher_key')
     if teacher and Tkey:
+        session['who'] = "Teacher"
         return "Teacher"
     
     std = session.get('std')
     if std:
+        session['who'] = "Student"
         return "Student"
     
     return False
@@ -612,3 +624,6 @@ def CreateSchedule():
             
     
     return render_template('Teachers/new_schedule.html', classes=classes)
+
+def logs():
+    pass

@@ -22,6 +22,7 @@ def home():
         try:
             session.pop('contact_data')
         except KeyError:
+            session['who'] = is_auth()
             return render_template('Home/index.html', notifications=notifications)
     return redirect('/Info/Contact')
 
